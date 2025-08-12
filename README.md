@@ -16,9 +16,9 @@ There are 4 functions in io.hpp:
 ## io.asm
 `io.asm` is where the actual outputting happens, here's what happens:
 * `print_lx`: `print_lx` means "print linux", it's one of the fastest ways to output with I/O. It is not very complex compared to windows' function.
-* `print_wn`: `print_wn` means "print windows", it uses externals for 2 windows call functions required to output, allocates space in `rsp` (required with windows API) and saves pointers in the 64 bytes. It then gets the windows output handle, the console pointer, string pointer, and length, then runs a syscall-like syntax, `WriteConsoleA`.
+* `print_wn`: `print_wn` means "print windows", it uses externals for 2 windows call functions required to output, allocates space in `rsp` (required with windows API) and saves pointers in the 64 bytes. It then gets the windows output handle, the console pointer, string pointer, and length, then runs a syscall-like syntax, `WriteFile`.
 
-`print_wn` is not fully optimised, windows' `WriteConsoleA` still has many steps internally.
+`print_wn` is not fully optimised, windows' `WriteFile` still has many steps internally.
 
 `io.asm` needs to be compiled seperately with `nasm`. A pre-compiled version is above (`io.o`) for anyone who doesn't have nasm.
 
@@ -49,14 +49,11 @@ workspace /
 is paired with `g++ main.cpp other.cpp io.o -o main.exe`
 and `main.cpp` adds `#include "io.hpp"` preferably with the other includes.
 
-# Notes
-This library is designed for `cmd.exe` and `shell`, not file I/O speed.
-The main overheads are introduced in windows when transferring to files, try using `WriteFile()` instead of this library for maximum performance.
-
 # Summary
 `speedio` gives you:
 * Minimal, direct, cross-platform, fast outputs
-* Zero buffering or formatting overhead (possible `WriteConsoleA` overhead)
+* Zero buffering or formatting overhead (possible `WriteFile` overhead)
 * Easy integration, drag and drop 2 files, add 1 line of code and one argument to your compilation
 
 Use `print_f` for max performance, `print` for convenience. Use `std::cout` for more safety (and slower times).
+But all are still thread-safe, pair this with `billiuhm/superthread` and make an I/O threadpool if you want to output multiple strings fast.
