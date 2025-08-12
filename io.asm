@@ -1,32 +1,45 @@
+section .data
+    hStdOut dq 0
+    initialised db 0
+
 global print_lx
 global print_wn
+extern GetStdHandle
+extern WriteFile
+
 section .text
 
+; Print for Linux (unchanged)
 print_lx:
-    mov rax, 1 ; syscall: write
-    mov rdx, rsi ; length -> rdx
-    mov rsi, rdi ; str pointer -> rsi
-    mov rdi, 1 ; stdout
+    mov rax, 1
+    mov rdx, rsi
+    mov rsi, rdi
+    mov rdi, 1
     syscall
     ret
 
-extern GetStdHandle
-extern WriteConsoleA
-
+; Print for Windows (fixed)
 print_wn:
-    sub rsp, 56 ; allocate space
-    mov [rsp+32], rcx ; save string pointer
-    mov [rsp+40], rdx ; save length
-
-    mov ecx, -11 ; STD_OUTPUT_HANDLE
+    cmp byte [rel initialised], 1
+    je  print_wn_fast
+    push rcx
+    push rdx
+    sub  rsp, 32
+    mov  ecx, -11
     call GetStdHandle
+    mov  [rel hStdOut], rax
+    add  rsp, 32
+    pop  rdx
+    pop  rcx
+    mov  byte [rel initialised], 1  ; Mark as initialized
 
-    mov rcx, rax ; hConsole
-    mov rdx, [rsp+32] ; str pointer
-    mov r8, [rsp+40] ; len
-    xor r9d, r9d ; NULL
-    mov qword [rsp+32], 0 ; NULL (w/ shadow space)
-    call WriteConsoleA
-
-    add rsp, 56
+print_wn_fast:
+    sub  rsp, 40            ; Shadow space (32) + 5th param (8)
+    mov  qword [rsp+32], 0  ; lpOverlapped = NULL (5th param)
+    lea  r9, [rsp]          ; lpNumberOfBytesWritten (uses shadow space)
+    mov  r8, rdx            ; nNumberOfBytesToWrite (length)
+    mov  rdx, rcx           ; lpBuffer (string pointer)
+    mov  rcx, [rel hStdOut] ; hFile
+    call WriteFile
+    add  rsp, 40
     ret
