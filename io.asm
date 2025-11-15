@@ -9,7 +9,7 @@ extern WriteFile
 
 section .text
 
-; Print for Linux (unchanged)
+; Print for Linux
 print_lx:
     mov rax, 1
     mov rdx, rsi
@@ -18,7 +18,7 @@ print_lx:
     syscall
     ret
 
-; Print for Windows (fixed)
+; Print for Windows
 print_wn:
     cmp byte [rel initialised], 1
     je  print_wn_fast
@@ -43,3 +43,4 @@ print_wn_fast:
     call WriteFile
     add  rsp, 40
     ret
+
